@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package de.hadesrofl.mqtt_client;
 
 import org.json.JSONObject;
@@ -47,13 +46,21 @@ import de.hadesrofl.json.JsonReader;
  *         <p>
  *         Copyright (c) 2016 by Rene Kremer
  *         </p>
- *         <p>Licensed under the Apache License, Version 2.0</p>
+ *         <p>
+ *         Licensed under the Apache License, Version 2.0
+ *         </p>
  * @version 0.1
  *
  */
 public class App {
 	public static void main(String[] args) {
-		JSONObject broker = JsonReader.readFile("config.json").getJSONObject("broker");
+		String cf = "";
+		if (args.length > 0) {
+			cf = args[0];
+		} else {
+			cf = "config.json";
+		}
+		JSONObject broker = JsonReader.readFile(cf).getJSONObject("broker");
 		ClientMqtt client = new ClientMqtt(broker.getString("address"), broker.getInt("port"),
 				broker.getString("topic"));
 		Thread clientThread = new Thread(client);
@@ -61,26 +68,26 @@ public class App {
 		clientThread.start();
 		// Need to wait a bit as the client needs to connect first
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			System.err.println("Thread can't sleep, need to take painkillers");
 		}
 		client.publishMessage("Ground control to Major Tom", 1);
-		client.setSubscriber(false);
-		// Need to wait a bit before the client changes subscription
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			System.err.println("Thread can't sleep, need to take painkillers");
-		}
-		client.publishMessage("Ground control to Major Tom - unscribed", 1);
-		try {
-			client.close();
-			clientThread.join();
-			clientThread = null;
-			client = null;
-		} catch (InterruptedException e) {
-			System.err.println("Error while joining client thread!");
-		}
+//		client.setSubscriber(false);
+//		// Need to wait a bit before the client changes subscription
+//		try {
+//			Thread.sleep(5000);
+//		} catch (InterruptedException e) {
+//			System.err.println("Thread can't sleep, need to take painkillers");
+//		}
+//		client.publishMessage("Ground control to Major Tom - unscribed", 1);
+//		try {
+//			client.close();
+//			clientThread.join();
+//			clientThread = null;
+//			client = null;
+//		} catch (InterruptedException e) {
+//			System.err.println("Error while joining client thread!");
+//		}
 	}
 }
