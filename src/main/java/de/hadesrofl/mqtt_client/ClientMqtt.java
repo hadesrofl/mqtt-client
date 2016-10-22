@@ -1,3 +1,19 @@
+/**
+ * Copyright 2016   Rene Kremer
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.hadesrofl.mqtt_client;
 
 import java.util.UUID;
@@ -9,8 +25,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttTopic;
 
 /**
- * 
- * 
+ *
+ *
  * <b>Project:</b> mqtt-client
  * <p>
  * <b>Packages:</b> de.hadesrofl.mqtt_client
@@ -19,20 +35,23 @@ import org.eclipse.paho.client.mqttv3.MqttTopic;
  * <b>File:</b> ClientMqtt.java
  * </p>
  * <p>
- * <b>last update:</b> 19.10.2016
+ * <b>last update:</b> 22.10.2016
  * </p>
  * <p>
- * <b>Time:</b> 16:25:18
+ * <b>Time:</b> 09:47:00
  * </p>
  * <b>Description:</b>
  * <p>
  * This class connects to a given server and topic, subscribes it and might
  * publish to it. The subscription is threaded so that it might not be
  * </p>
- * 
+ *
  * @author Rene Kremer
  *         <p>
  *         Copyright (c) 2016 by Rene Kremer
+ *         </p>
+ *         <p>
+ *         Licensed under the Apache License, Version 2.0
  *         </p>
  * @version 0.1
  */
@@ -40,48 +59,79 @@ public class ClientMqtt implements Runnable {
 	/**
 	 * Url of the broker
 	 */
-	String BROKER_URL = null;
+	private String BROKER_URL = "tcp://";
 	/**
 	 * Topic to subscribe to
 	 */
-	String M2MIO_TOPIC = null;
+	private String M2MIO_TOPIC = null;
 	/**
 	 * Username used for the broker
 	 */
-	String M2MIO_USERNAME = null;
+	private String M2MIO_USERNAME = null;
 	/**
 	 * Password used for the broker
 	 */
-	String M2MIO_PASSWORD = null;
+	private String M2MIO_PASSWORD = null;
 	/**
 	 * Client ID used for the connection
 	 */
-	String CLIENT_ID = UUID.randomUUID().toString();
+	private String CLIENT_ID = UUID.randomUUID().toString();
+	/**
+	 * Max amount of possible retries. Currently 10
+	 */
+	public final int MAX_RETRIES = 10;
+	/**
+	 * Listen to topic?
+	 */
+	private boolean subscriber = false;
+	/**
+	 * Retries to connect
+	 */
+	private int connectionRetries = 0;
 	/**
 	 * Client object for the connection
 	 */
-	MqttClient myClient = null;
+	private MqttClient myClient = null;
+	/**
+	 * Option of the connection
+	 */
+	private MqttConnectOptions connOpt;
 	/**
 	 * boolean to cancel thread if running
 	 */
-	volatile Boolean cancel = false;
+	private volatile Boolean close = false;
 
 	/**
-	 * Constructor
-	 * 
+	 * Constructor with default port 1883
+	 *
 	 * @param url
 	 *            is the url of the broker
 	 * @param topic
 	 *            is the topic to subscribe to
 	 */
 	public ClientMqtt(String url, String topic) {
-		BROKER_URL = url;
+		BROKER_URL += url + ":1883";
 		M2MIO_TOPIC = topic;
 	}
 
 	/**
-	 * (Boa)Constructor
-	 * 
+	 * Constructor
+	 *
+	 * @param url
+	 *            is the url of the broker
+	 * @param port
+	 *            is the port of the broker
+	 * @param topic
+	 *            is the topic to subscribe to
+	 */
+	public ClientMqtt(String url, int port, String topic) {
+		BROKER_URL += url + ":" + port;
+		M2MIO_TOPIC = topic;
+	}
+
+	/**
+	 * (Boa)Constructor with default port 1883
+	 *
 	 * @param url
 	 *            is the url to the mqtt broker
 	 * @param topic
@@ -92,7 +142,28 @@ public class ClientMqtt implements Runnable {
 	 *            is the password used for the broker
 	 */
 	public ClientMqtt(String url, String topic, String username, String password) {
-		BROKER_URL = url;
+		BROKER_URL += url + ":1883";
+		M2MIO_TOPIC = topic;
+		M2MIO_USERNAME = username;
+		M2MIO_PASSWORD = password;
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param url
+	 *            is the url to the mqtt broker
+	 * @param port
+	 *            is the port of the broker
+	 * @param topic
+	 *            is the name of the topic
+	 * @param username
+	 *            is the username used for the broker
+	 * @param password
+	 *            is the password used for the broker
+	 */
+	public ClientMqtt(String url, int port, String topic, String username, String password) {
+		BROKER_URL += url + ":" + port;
 		M2MIO_TOPIC = topic;
 		M2MIO_USERNAME = username;
 		M2MIO_PASSWORD = password;
@@ -100,62 +171,49 @@ public class ClientMqtt implements Runnable {
 
 	/**
 	 * Runs the client and connects and subscribes to the server and topic.
-	 * Disconnects if {@link #cancel() cancel} is called
+	 * Disconnects if {@link #close() cancel} is called
 	 */
 	public synchronized void run() {
-		// setup MQTT Client
-		MqttConnectOptions connOpt = new MqttConnectOptions();
-
-		connOpt.setCleanSession(true);
-		connOpt.setKeepAliveInterval(30);
-		if (M2MIO_USERNAME != null) {
-			connOpt.setUserName(M2MIO_USERNAME);
-		}
-		if (M2MIO_PASSWORD != null) {
-			connOpt.setPassword(M2MIO_PASSWORD.toCharArray());
-		}
-
-		// Connect to Broker
+		// setup MQTT Client and connect to broker
 		try {
 			myClient = new MqttClient(BROKER_URL, CLIENT_ID);
-			myClient.setCallback(new MessageListener());
-			myClient.connect(connOpt);
-		} catch (MqttException e) {
-			e.printStackTrace();
+			myClient.setCallback(new MessageListener(this));
+		} catch (MqttException e1) {
+			System.err.println("Could'nt create a new MqttClient!");
 			System.exit(-1);
 		}
-		System.out.println("Connected to " + BROKER_URL);
+		connect();
 
-		// subscribe to topic if subscriber
-		try {
-			int subQoS = 0;
-			myClient.subscribe(M2MIO_TOPIC, subQoS);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		while (!cancel)
-			;
-		// disconnect
-		try {
-			// wait to ensure subscribed messages are delivered
-			Thread.sleep(5000);
-			if (myClient != null) {
-				myClient.disconnect();
+		boolean subscribed = false;
+		while (!close) {
+			if (subscriber && !subscribed) {
+				try {
+					int subQoS = 0;
+					myClient.subscribe(M2MIO_TOPIC, subQoS);
+					subscribed = true;
+				} catch (Exception e) {
+					System.err.println("Can't subscribe to " + M2MIO_TOPIC);
+				}
+			} else if (!subscriber && subscribed) {
+				try {
+					myClient.unsubscribe(M2MIO_TOPIC);
+				} catch (MqttException e) {
+					System.err.println("Can't unscribe from " + M2MIO_TOPIC);
+				}
 			}
-		} catch (Exception e) {
-			System.err.println("Error while disconnecting from server!");
 		}
+		disconnect();
 	}
 
 	/**
 	 * Publishes a message to the topic
-	 * 
+	 *
 	 * @param message
 	 *            is the message as String
 	 * @param qos
-	 *            is the quality as service as mentioned by (see <a
-	 *            href="https://www.eclipse.org/paho/files/javadoc/index.html"
-	 *            >Paho JavaDoc</a>)
+	 *            is the quality as service as mentioned by (see <a href=
+	 *            "https://www.eclipse.org/paho/files/javadoc/index.html" >Paho
+	 *            JavaDoc</a>)
 	 */
 	public void publishMessage(String message, int qos) {
 		MqttMessage post = new MqttMessage(message.getBytes());
@@ -174,18 +232,86 @@ public class ClientMqtt implements Runnable {
 	}
 
 	/**
+	 * Sets a flag for subscribing to topic
+	 *
+	 * @param b
+	 *            is the flag
+	 */
+	public void setSubscriber(boolean b) {
+		subscriber = b;
+	}
+
+	/**
 	 * Cancels the thread
 	 */
-	public void cancel() {
-		this.cancel = true;
+	public void close() {
+		this.close = true;
 	}
 
 	/**
 	 * Gets the topic to which this client is subscribed to
-	 * 
+	 *
 	 * @return the topic as MqttTopic object
 	 */
 	public MqttTopic getTopic() {
 		return myClient.getTopic(M2MIO_TOPIC);
+	}
+
+	/**
+	 * Connects to the broker. If it can't connect, the client will wait one
+	 * second and reconnect up to {@link MAX_RETRIES} times. After unsuccessful
+	 * MAX_RETRIES the program terminates
+	 *
+	 */
+	public void connect() {
+		connOpt = new MqttConnectOptions();
+		connOpt.setCleanSession(true);
+		connOpt.setKeepAliveInterval(30);
+		if (M2MIO_USERNAME != null) {
+			connOpt.setUserName(M2MIO_USERNAME);
+		}
+		if (M2MIO_PASSWORD != null) {
+			connOpt.setPassword(M2MIO_PASSWORD.toCharArray());
+		}
+		for (connectionRetries = 0; connectionRetries < MAX_RETRIES; connectionRetries++) {
+			// Connect to Broker
+			try {
+				myClient.connect(connOpt);
+				break;
+			} catch (MqttException e) {
+				System.err.println("Couln't connect!");
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				System.err.println("Thread can't sleep, need to take painkillers");
+			}
+		}
+		if (connectionRetries >= MAX_RETRIES) {
+			System.exit(-1);
+		}
+		if(subscriber)
+			try {
+				myClient.subscribe(M2MIO_TOPIC);
+			} catch (MqttException e) {
+				System.err.println("Error while subscribing to " + M2MIO_TOPIC);
+			}
+		System.out.println("Connected to " + BROKER_URL);
+	}
+
+	/**
+	 * Disconnects from the broker
+	 */
+	public void disconnect() {
+		// disconnect
+		try {
+			// wait to ensure subscribed messages are delivered
+			Thread.sleep(5000);
+			if (myClient != null) {
+				myClient.disconnect();
+			}
+		} catch (Exception e) {
+			System.err.println("Error while disconnecting from server!");
+		}
 	}
 }

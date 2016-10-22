@@ -1,0 +1,8 @@
+{
+    "broker":{
+    	"address": "192.168.0.125",
+    	"port": "1883",
+    	"topic": "test/topic",
+    	"subscribe": "true"
+    }
+}
