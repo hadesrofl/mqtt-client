@@ -16,8 +16,13 @@
 
 package de.hadesrofl.mqtt_client;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import de.hadesrofl.database.Database;
 import de.hadesrofl.json.JsonReader;
 
 /**
@@ -49,7 +54,7 @@ import de.hadesrofl.json.JsonReader;
  *         <p>
  *         Licensed under the Apache License, Version 2.0
  *         </p>
- * @version 0.1
+ * @version 0.2
  *
  */
 public class App {
@@ -61,33 +66,56 @@ public class App {
 			cf = "config.json";
 		}
 		JSONObject broker = JsonReader.readFile(cf).getJSONObject("broker");
-		ClientMqtt client = new ClientMqtt(broker.getString("address"), broker.getInt("port"),
-				broker.getString("topic"));
-		Thread clientThread = new Thread(client);
-		client.setSubscriber(broker.getBoolean("subscribe"));
-		clientThread.start();
+		JSONObject topics = broker.getJSONObject("topics");
+		Database db = null;
+		try {
+			JSONObject database = JsonReader.readFile(cf).getJSONObject(
+					"database");
+			db = new Database(database.getString("dbHost"),
+					database.getString("dbPort"), database.getString("dbName"),
+					database.getString("dbUser"), database.getString("dbPass"));
+		} catch (JSONException e) {
+			System.err.println("No database mentioned in config file");
+		}
+		List<ClientMqtt> clients = new ArrayList<ClientMqtt>();
+		List<Thread> clientThreads = new ArrayList<Thread>();
+		for (String topic : topics.keySet()) {
+			ClientMqtt client = null;
+			if (db == null) {
+				client = new ClientMqtt(broker.getString("address"),
+						broker.getInt("port"), topics.getString(topic));
+			} else {
+				client = new ClientMqtt(broker.getString("address"),
+						broker.getInt("port"), topics.getString(topic), db);
+			}
+			Thread clientThread = new Thread(client);
+			client.setSubscriber(broker.getBoolean("subscribe"));
+			clients.add(client);
+			clientThreads.add(clientThread);
+			clientThread.start();
+		}
 		// Need to wait a bit as the client needs to connect first
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			System.err.println("Thread can't sleep, need to take painkillers");
 		}
-		client.publishMessage("Ground control to Major Tom", 1);
-//		client.setSubscriber(false);
-//		// Need to wait a bit before the client changes subscription
-//		try {
-//			Thread.sleep(5000);
-//		} catch (InterruptedException e) {
-//			System.err.println("Thread can't sleep, need to take painkillers");
-//		}
-//		client.publishMessage("Ground control to Major Tom - unscribed", 1);
-//		try {
-//			client.close();
-//			clientThread.join();
-//			clientThread = null;
-//			client = null;
-//		} catch (InterruptedException e) {
-//			System.err.println("Error while joining client thread!");
-//		}
+		// client.publishMessage("Ground control to Major Tom", 1);
+		// client.setSubscriber(false);
+		// // Need to wait a bit before the client changes subscription
+		// try {
+		// Thread.sleep(5000);
+		// } catch (InterruptedException e) {
+		// System.err.println("Thread can't sleep, need to take painkillers");
+		// }
+		// client.publishMessage("Ground control to Major Tom - unscribed", 1);
+		// try {
+		// client.close();
+		// clientThread.join();
+		// clientThread = null;
+		// client = null;
+		// } catch (InterruptedException e) {
+		// System.err.println("Error while joining client thread!");
+		// }
 	}
 }

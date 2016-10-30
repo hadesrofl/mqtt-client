@@ -1,8 +1,18 @@
 {
-    "broker":{
-    	"address": "192.168.0.125",
-    	"port": "1883",
-    	"topic": "test/topic",
-    	"subscribe": "true"
-    }
+	"broker": {
+		"address": "localhost",
+		"port": "1883",
+		"topics": {
+			"t1": "temperature/living-room",
+			"t2": "humidity/living-room"
+		},
+		"subscribe": "true"
+	},
+	"database":{
+		"dbHost": "localhost",
+		"dbPort": "3306",
+		"dbName": "TableName",
+		"dbUser": "Username",
+		"dbPass": "Password"
+	}
 }

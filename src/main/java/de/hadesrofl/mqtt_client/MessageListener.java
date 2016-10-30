@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package de.hadesrofl.mqtt_client;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -48,8 +47,10 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  *         <p>
  *         Copyright (c) 2016 by Rene Kremer
  *         </p>
- *         <p>Licensed under the Apache License, Version 2.0</p>
- * @version 0.1
+ *         <p>
+ *         Licensed under the Apache License, Version 2.0
+ *         </p>
+ * @version 0.2
  */
 public class MessageListener implements MqttCallback {
 	/**
@@ -76,7 +77,7 @@ public class MessageListener implements MqttCallback {
 	 *
 	 */
 	public void connectionLost(Throwable t) {
-		System.err.println("Connection lost: \nTrying to reconnect..." + t.getStackTrace());
+		System.out.println("Connection lost: \nTrying to reconnect...");
 		myClient.connect();
 	}
 
@@ -106,7 +107,8 @@ public class MessageListener implements MqttCallback {
 				System.out.println(ret);
 			}
 		} catch (MqttException e) {
-			System.err.println("No message in delivery included!");
+			System.out.println("No message in delivery included!");
+			System.err.println(e.getMessage());
 		}
 	}
 

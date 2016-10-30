@@ -17,12 +17,15 @@
 package de.hadesrofl.mqtt_client;
 
 import java.util.UUID;
+
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttTopic;
+
+import de.hadesrofl.database.Database;
 
 /**
  *
@@ -53,7 +56,7 @@ import org.eclipse.paho.client.mqttv3.MqttTopic;
  *         <p>
  *         Licensed under the Apache License, Version 2.0
  *         </p>
- * @version 0.1
+ * @version 0.2
  */
 public class ClientMqtt implements Runnable {
 	/**
@@ -76,6 +79,10 @@ public class ClientMqtt implements Runnable {
 	 * Client ID used for the connection
 	 */
 	private String CLIENT_ID = UUID.randomUUID().toString();
+	/**
+	 * Database object to persist data to
+	 */
+	private Database db = null;
 	/**
 	 * Max amount of possible retries. Currently 10
 	 */
@@ -130,6 +137,22 @@ public class ClientMqtt implements Runnable {
 	}
 
 	/**
+	 * Constructor
+	 *
+	 * @param url
+	 *            is the url of the broker
+	 * @param port
+	 *            is the port of the broker
+	 * @param topic
+	 *            is the topic to subscribe to
+	 */
+	public ClientMqtt(String url, int port, String topic, Database db) {
+		BROKER_URL += url + ":" + port;
+		M2MIO_TOPIC = topic;
+		this.db = db;
+	}
+
+	/**
 	 * (Boa)Constructor with default port 1883
 	 *
 	 * @param url
@@ -177,9 +200,14 @@ public class ClientMqtt implements Runnable {
 		// setup MQTT Client and connect to broker
 		try {
 			myClient = new MqttClient(BROKER_URL, CLIENT_ID);
-			myClient.setCallback(new MessageListener(this));
-		} catch (MqttException e1) {
-			System.err.println("Could'nt create a new MqttClient!");
+			if (db == null) {
+				myClient.setCallback(new MessageListener(this));
+			} else {
+				myClient.setCallback(new MySqlListener(this, db));
+			}
+		} catch (MqttException e) {
+			System.out.println("Could'nt create a new MqttClient!");
+			System.err.println(e.getMessage());
 			System.exit(-1);
 		}
 		connect();
@@ -192,13 +220,15 @@ public class ClientMqtt implements Runnable {
 					myClient.subscribe(M2MIO_TOPIC, subQoS);
 					subscribed = true;
 				} catch (Exception e) {
-					System.err.println("Can't subscribe to " + M2MIO_TOPIC);
+					System.out.println("Can't subscribe to " + M2MIO_TOPIC);
+					System.err.println(e.getMessage());
 				}
 			} else if (!subscriber && subscribed) {
 				try {
 					myClient.unsubscribe(M2MIO_TOPIC);
 				} catch (MqttException e) {
-					System.err.println("Can't unscribe from " + M2MIO_TOPIC);
+					System.out.println("Can't unscribe from " + M2MIO_TOPIC);
+					System.err.println(e.getMessage());
 				}
 			}
 		}
@@ -227,7 +257,8 @@ public class ClientMqtt implements Runnable {
 			token.waitForCompletion();
 			Thread.sleep(100);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Couldn't publish the message!");
+			System.err.println(e.getMessage());
 		}
 	}
 
@@ -279,22 +310,25 @@ public class ClientMqtt implements Runnable {
 				myClient.connect(connOpt);
 				break;
 			} catch (MqttException e) {
-				System.err.println("Couln't connect!");
+				System.out.println("Couln't connect!");
+				System.err.println(e.getMessage());
 			}
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				System.err.println("Thread can't sleep, need to take painkillers");
+				System.out.println("Thread can't sleep, need to take painkillers");
+				System.err.println(e.getMessage());
 			}
 		}
 		if (connectionRetries >= MAX_RETRIES) {
 			System.exit(-1);
 		}
-		if(subscriber)
+		if (subscriber)
 			try {
 				myClient.subscribe(M2MIO_TOPIC);
 			} catch (MqttException e) {
-				System.err.println("Error while subscribing to " + M2MIO_TOPIC);
+				System.out.println("Error while subscribing to " + M2MIO_TOPIC);
+				System.err.println(e.getMessage());
 			}
 		System.out.println("Connected to " + BROKER_URL);
 	}
@@ -309,9 +343,11 @@ public class ClientMqtt implements Runnable {
 			Thread.sleep(5000);
 			if (myClient != null) {
 				myClient.disconnect();
+				db.disconnect();
 			}
 		} catch (Exception e) {
-			System.err.println("Error while disconnecting from server!");
+			System.out.println("Error while disconnecting from server!");
+			System.err.println(e.getMessage());
 		}
 	}
 }
