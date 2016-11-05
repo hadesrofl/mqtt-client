@@ -7,7 +7,7 @@ services:
 
 variables:
   MYSQL_ROOT_PASSWORD: "password"
-  MYSQL_ALLOW_EMPTY_PASSWORD: yes
+  MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
 
 connect:
   stage: prepare
