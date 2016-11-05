@@ -13,7 +13,7 @@ connect:
   stage: prepare
   image: mysql
   script:
-  - mysql --user=root --password="MYSQL_ROOT_PASSWORD" --host=mysql < "resources/NodeMCUTest.sql"
+  - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql < "resources/NodeMCUTest.sql"
   
 dev:
   stage: test
