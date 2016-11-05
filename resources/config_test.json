@@ -1,6 +1,6 @@
 {
 	"broker": {
-		"address": "192.168.0.125",
+		"address": "localhost",
 		"port": "1883",
 		"topics": {
 			"t1": "temperature/living-room",

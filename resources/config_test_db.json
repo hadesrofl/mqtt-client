@@ -1,6 +1,6 @@
 {
 	"broker": {
-		"address": "192.168.0.125",
+		"address": "localhost",
 		"port": "1883",
 		"topics": {
 			"t1": "temperature/living-room",
@@ -9,10 +9,10 @@
 		"subscribe": "true"
 	},
 	"database":{
-		"dbHost": "192.168.0.125",
+		"dbHost": "mysql",
 		"dbPort": "3306",
 		"dbName": "NodeMCUTest",
-		"dbUser": "nodetest",
-		"dbPass": "test147"
+		"dbUser": "root",
+		"dbPass": ""
 	}
 }

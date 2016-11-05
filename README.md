@@ -1,3 +1,6 @@
+[![build status](https://gitlab.com/hadesrofl/mqtt-client/badges/master/build.svg)](https://gitlab.com/hadesrofl/mqtt-client/commits/master)
+[![coverage report](https://gitlab.com/hadesrofl/mqtt-client/badges/master/coverage.svg)](https://gitlab.com/hadesrofl/mqtt-client/commits/master)
+
 # MQTT-Client
 ## A simple mqtt client written in Java based on the Paho Lib
 -------------------------------------------------------------
