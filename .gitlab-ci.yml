@@ -4,6 +4,7 @@ stages:
 
 services:
   - mysql
+  - ansi/mosquitto
 
 variables:
   MYSQL_ROOT_PASSWORD: "password"
@@ -20,7 +21,5 @@ dev:
 image: kaiwinter/docker-java8-maven
 maven: 
     script: 
-        - apt-get update && apt-get install mosquitto
-        - mosquitto
         - mvn install -B 
         - cat target/site/jacoco/index.html
