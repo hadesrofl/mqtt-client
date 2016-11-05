@@ -1,6 +1,6 @@
 {
 	"broker": {
-		"address": "localhost",
+		"address": "ansi__mosquitto",
 		"port": "1883",
 		"topics": {
 			"t1": "temperature/living-room",
