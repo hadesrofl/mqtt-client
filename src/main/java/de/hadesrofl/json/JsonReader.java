@@ -48,7 +48,9 @@ import org.json.JSONObject;
  *         <p>
  *         Copyright (c) 2016 by Rene Kremer
  *         </p>
- *         <p>Licensed under the Apache License, Version 2.0</p>
+ *         <p>
+ *         Licensed under the Apache License, Version 2.0
+ *         </p>
  * @version 0.1
  */
 public class JsonReader {
@@ -60,7 +62,10 @@ public class JsonReader {
 	 * @return an json object
 	 */
 	public static JSONObject readFile(String file) {
-		return readFile(new File(file));
+		if (file != null && file.compareTo("") != 0)
+			return readFile(new File(file));
+		else
+			return null;
 	}
 
 	/**
@@ -89,7 +94,9 @@ public class JsonReader {
 				System.err.println("Can't close buffered reader!");
 			}
 		}
-		JSONObject obj = new JSONObject(jsonData);
+		JSONObject obj = null;
+		if (jsonData.compareTo("") != 0)
+			obj = new JSONObject(jsonData);
 		return obj;
 	}
 }

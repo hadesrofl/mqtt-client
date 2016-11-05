@@ -1,0 +1,18 @@
+{
+	"broker": {
+		"address": "192.168.0.125",
+		"port": "1883",
+		"topics": {
+			"t1": "temperature/living-room",
+			"t2": "humidity/living-room"
+		},
+		"subscribe": "true"
+	},
+	"database":{
+		"dbHost": "192.168.0.125",
+		"dbPort": "3306",
+		"dbName": "NodeMCUTest",
+		"dbUser": "nodetest",
+		"dbPass": "test147"
+	}
+}

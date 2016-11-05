@@ -65,12 +65,14 @@ public class App {
 		} else {
 			cf = "config.json";
 		}
-		JSONObject broker = JsonReader.readFile(cf).getJSONObject("broker");
+		JSONObject config = JsonReader.readFile(cf);
+		if (config == null)
+			System.exit(-1);
+		JSONObject broker = config.getJSONObject("broker");
 		JSONObject topics = broker.getJSONObject("topics");
 		Database db = null;
 		try {
-			JSONObject database = JsonReader.readFile(cf).getJSONObject(
-					"database");
+			JSONObject database = config.getJSONObject("database");
 			db = new Database(database.getString("dbHost"),
 					database.getString("dbPort"), database.getString("dbName"),
 					database.getString("dbUser"), database.getString("dbPass"));
@@ -93,29 +95,14 @@ public class App {
 			clients.add(client);
 			clientThreads.add(clientThread);
 			clientThread.start();
+			// Need to wait a bit as the client needs to connect first
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				System.err
+						.println("Thread can't sleep, need to take painkillers");
+			}
+			client.publishMessage("Ground control to Major Tom", 1);
 		}
-		// Need to wait a bit as the client needs to connect first
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			System.err.println("Thread can't sleep, need to take painkillers");
-		}
-		// client.publishMessage("Ground control to Major Tom", 1);
-		// client.setSubscriber(false);
-		// // Need to wait a bit before the client changes subscription
-		// try {
-		// Thread.sleep(5000);
-		// } catch (InterruptedException e) {
-		// System.err.println("Thread can't sleep, need to take painkillers");
-		// }
-		// client.publishMessage("Ground control to Major Tom - unscribed", 1);
-		// try {
-		// client.close();
-		// clientThread.join();
-		// clientThread = null;
-		// client = null;
-		// } catch (InterruptedException e) {
-		// System.err.println("Error while joining client thread!");
-		// }
 	}
 }

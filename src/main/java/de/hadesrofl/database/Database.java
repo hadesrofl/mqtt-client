@@ -91,7 +91,8 @@ public class Database {
 	 * @param dbPass
 	 *            is the password of the user
 	 */
-	public Database(String dbHost, String dbPort, String dbName, String dbUser, String dbPass) {
+	public Database(String dbHost, String dbPort, String dbName, String dbUser,
+			String dbPass) {
 		this.dbHost = dbHost;
 		this.dbPort = dbPort;
 		this.dbName = dbName;
@@ -107,8 +108,9 @@ public class Database {
 	public boolean connect() {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			con = DriverManager.getConnection("jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName + "?" + "user="
-					+ dbUser + "&" + "password=" + dbPass);
+			con = DriverManager.getConnection("jdbc:mysql://" + dbHost + ":"
+					+ dbPort + "/" + dbName + "?" + "user=" + dbUser + "&"
+					+ "password=" + dbPass);
 			return true;
 		} catch (ClassNotFoundException e) {
 			System.out.println("DB driver not found!");
@@ -129,8 +131,11 @@ public class Database {
 	 */
 	public boolean disconnect() {
 		try {
-			con.close();
-			return true;
+			if (con != null) {
+				con.close();
+				return true;
+			} else
+				throw new SQLException("Connection is null!");
 		} catch (SQLException e) {
 			System.out.println();
 			System.err.println(e.getMessage());
