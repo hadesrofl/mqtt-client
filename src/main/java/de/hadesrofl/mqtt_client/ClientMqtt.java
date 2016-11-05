@@ -38,10 +38,10 @@ import de.hadesrofl.database.Database;
  * <b>File:</b> ClientMqtt.java
  * </p>
  * <p>
- * <b>last update:</b> 22.10.2016
+ * <b>last update:</b> 04.11.2016
  * </p>
  * <p>
- * <b>Time:</b> 09:47:00
+ * <b>Time:</b> 20:38:00
  * </p>
  * <b>Description:</b>
  * <p>
@@ -56,7 +56,7 @@ import de.hadesrofl.database.Database;
  *         <p>
  *         Licensed under the Apache License, Version 2.0
  *         </p>
- * @version 0.2
+ * @version 0.21
  */
 public class ClientMqtt implements Runnable {
 	/**

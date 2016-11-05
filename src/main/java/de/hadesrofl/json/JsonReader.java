@@ -34,10 +34,10 @@ import org.json.JSONObject;
  * <b>File:</b> JsonReader.java
  * </p>
  * <p>
- * <b>last update:</b> 22.10.2016
+ * <b>last update:</b> 04.11.2016
  * </p>
  * <p>
- * <b>Time:</b> 10:10:25
+ * <b>Time:</b> 20:38:25
  * </p>
  * <b>Description:</b>
  * <p>
@@ -51,7 +51,7 @@ import org.json.JSONObject;
  *         <p>
  *         Licensed under the Apache License, Version 2.0
  *         </p>
- * @version 0.1
+ * @version 0.21
  */
 public class JsonReader {
 	/**
